@@ -1,22 +1,15 @@
-.header {
-	padding: 1em 5em 1em 5em;
-	background: #eef1ff;
-	border-bottom: #112258 3px solid;
-}
-
-div {
-	background: #eef1ff;
+div{
 	text-align: center;
-	margin: auto;
-	width: fit-content;
-	/* border: #112258 1px solid; */
 }
-
+#header{
+	background-color: #dee2e6;
+	padding-bottom: 1em;
+}
 
 .defaultButton {
-	width: 12em;
-	height: 4em;
-	border-radius: 0.5em;
+	width: 6em;
+	height: 2.5em;
+	/* border-radius: 0.2em; */
 	background-color: #6acef1;/* ST light blue */
 	border: none;
 	color: white;
@@ -24,7 +17,7 @@ div {
 	font-weight: bold;
 	margin: 10px;
 	cursor: pointer;
-	box-shadow: 1px 1px rgba(20, 54, 94, 0.658);
+	box-shadow: 2px 2px rgba(20, 54, 94, 0.658);
 	
 }
 
@@ -45,11 +38,11 @@ div {
 .connectedStyleButton {
 	opacity: 0.8;
     cursor: not-allowed;
-	width: 12em;
-	height: 4em;
-	border-radius: 0.5em;
-	background-color: #9ae0ae;
-	border: 3px green solid;
+	width: 6em;
+	height: 2.5em;
+	/* border-radius: 0.5em; */
+	background-color: #dadada;
+	border: 3px rgb(168, 228, 168) solid;
 	color: white;
 	font-size: large;
 	font-weight: bold;
@@ -64,13 +57,13 @@ img {
 	width: 16em;
 }
 
-#readLabel {
+/* #readLabel {
 	margin: 22px;
 	display: inline-block;
 	text-align: center;
 	font-size: large;
 	width: 10em;
-}
+} */
 
 .textInput {
 	margin: 20px;
@@ -82,16 +75,6 @@ img {
 
 .fileInput {
 	background: rgb(73, 102, 129);
-}
-
-.progressBar {
-	background: red;
-	border-radius: 10px;
-}
-
-.ChartInfoDiv {
-	margin: 0px;
-	padding:  0.5em 0.5em 0.5em 3em;
 }
 
 ul {
@@ -124,17 +107,6 @@ color: #6acef1;/* ST light blue */
 
 }
 
-select{
-    background: #20d492;
-    color: #fff;
-    padding: 0 10px;
-    font-size: 22px;
-}
-select option{
-	color: #000;
-    padding: 0 10px;
-}
-
 #logPanel {
 	width: min-content;
 	position: absolute;
@@ -154,27 +126,6 @@ select option{
 	width: -webkit-fill-available;
 }
 
-.DTButton {
-	background-color: red;
-	color: purple;
-}
-
-#notifyButtonDownload {
-	background-color: green;
-	color: grey;
-}
-
-.fakey {
-    border: solid 1px; 
-    color: #ccc; 
-    font-family: sans-serif;
-    font-size: .9em;    
-}
-
-.fakey input {
-    border: none;   
-    outline: none;
-    font-family: sans-serif;
-    font-size: .9em; 
-    width: 200px;    
+.card-text {
+	text-align: left;
 }

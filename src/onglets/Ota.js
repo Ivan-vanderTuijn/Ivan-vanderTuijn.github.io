@@ -2,13 +2,12 @@ import React from 'react';
 import '../styles/Header.css';
 import { Buffer } from 'buffer';
 import { createLogElement } from "../components/Header";
-import { scryRenderedComponentsWithType } from 'react-dom/test-utils';
 
 const CHUNK_LENGTH = 248;
 let writeAddressCharacteristic;
 let indicateCharacteristic;
-let notifyCharacteristic;
 let writeWithoutResponseCharacteristic;
+let fileContent;
 
 const Ota = (props) => {
 
@@ -47,12 +46,16 @@ const Ota = (props) => {
 
     // Send to device the action to be ready for the update of the firmware
     async function writeAddress() {
+        let address = document.getElementById("sectorInput").value
+        let hexString = address.substring(0,2);
+        hexString = parseInt(hexString, 16);
+        console.log(hexString);
         // dec : 002 000 112 000
         // hex : 02 00 70 00
         let myWord = new Uint8Array(4);
         myWord[0] = "002"; // Action 
         myWord[1] = "000"; // Address
-        myWord[2] = "112"; // Address
+        myWord[2] = hexString; // Address
         myWord[3] = "000"; // Address
         try {
             await writeAddressCharacteristic.characteristic.writeValue(myWord);
@@ -64,7 +67,7 @@ const Ota = (props) => {
         }
     }
 
-    async function uploadData(uint8View) {
+    async function onUploadButtonClick() {
         let progressUploadBar = document.getElementById('progressUploadBar');
         document.getElementById('FileStatus').innerHTML = "Uploading...";
         let start = 0;
@@ -73,19 +76,21 @@ const Ota = (props) => {
         let totalBytes = 0;
         // Send to device the base memory address (sector 7)
         writeAddress();
-        // Slice the uint8View (the binary file) into small chucks of CHUNK_LENGTH
+        // Slice the fileContent (the binary file) into small chucks of CHUNK_LENGTH
         // And send them to the device
         // Start the timer
         var startTime = performance.now()
-        for (let i = 0; i < (uint8View.length) / CHUNK_LENGTH; i++) {
-            sub = uint8View.slice(start, end);
+        for (let i = 0; i < (fileContent.length) / CHUNK_LENGTH; i++) {
+            sub = fileContent.slice(start, end);
             console.log(sub);
             start = end;
             end += CHUNK_LENGTH;
             await writeWithoutResponseCharacteristic.characteristic.writeValue(sub)
-            createLogElement(sub, 2, "OTA WRITE");
+            // createLogElement(sub, 2, "OTA WRITE");
             totalBytes += sub.byteLength
-            progressUploadBar.value = (totalBytes * 100) / uint8View.length;
+            console.log("progressUploadBar");
+            console.log(progressUploadBar);
+            progressUploadBar.setAttribute('style','width:'+Number((totalBytes * 100) / fileContent.length)+'%');
             console.log(i + "> (" + totalBytes + ") writing " + sub.byteLength + ' bytes..');
 
         }
@@ -103,17 +108,21 @@ const Ota = (props) => {
 
     // Read the file selected from the file input and upload it
     async function showFile(input) {
-        let fileContent = input.target.files[0];
+        fileContent = input.target.files[0];
         let reader = new FileReader();
         reader.readAsArrayBuffer(fileContent);
         reader.onload = async function () {
             let uint8View = new Uint8Array(reader.result);
-            uploadData(uint8View);
+            fileContent = uint8View;
         }
     }
-
-    async function onFetchButtonClick() {
-        let selectedOption = document.getElementById("selectFetch").value;
+    async function onBinaryRadioButtonClick() {
+        let selectedOption = document.getElementsByName("selectBinary");
+        for (let i = 0; i < selectedOption.length; i++){
+            if(selectedOption[i].checked){
+                selectedOption = selectedOption[i].value;
+            }
+        }
         switch (selectedOption) {
             case "P2P":
                 console.log("P2P server is selected");
@@ -128,7 +137,7 @@ const Ota = (props) => {
                         console.log(buffStr);
                         let uint8View = Uint8Array.from(Buffer.from(buffStr, 'hex'));
                         console.log(uint8View);
-                        uploadData(uint8View);
+                        fileContent = uint8View;
                         console.log("P2P server is uploading");
                     })
                     .catch(error => console.error(error))
@@ -146,7 +155,7 @@ const Ota = (props) => {
                         console.log(buffStr);
                         let uint8View = Uint8Array.from(Buffer.from(buffStr, 'hex'));
                         console.log(uint8View);
-                        uploadData(uint8View);
+                        fileContent = uint8View;
                         console.log("Heart rate is uploading");
                     })
                     .catch(error => console.error(error))
@@ -156,23 +165,124 @@ const Ota = (props) => {
         }
     }
 
-    return (
-        <div>
-            <div>
-                <button onClick={onFetchButtonClick} className='defaultButton'>Fetch file p2pserver ota on github</button>
-                <select id='selectFetch'>
-                    <option>Select</option>
-                    <option value="P2P">P2P</option>
-                    <option value="HR">HR</option>
-                </select>
-            </div>
-            <div>
-                <input type="file" onChange={(e) => showFile(e)} className='fileInput' />
-                <progress value="0" max="100" id="progressUploadBar" className='progressBar'></progress>
-                <h1 id='FileStatus'></h1>
-            </div>
+    function handlerRadioSector(){
+        let selectedBoardOption = document.getElementsByName("selectSector");
+        document.getElementById("rebootSelectFilePart").style="display:''";
+        for (let i = 0; i < selectedBoardOption.length; i++){
+          if(selectedBoardOption[i].checked){
+            switch (selectedBoardOption[i].value){
+              case "application":
+                document.getElementById("wirelessBinaryList").style="display:none";
+                document.getElementById("applicationBinaryList").style="display:''";
+                break;
+              case "wireless":
+                document.getElementById("applicationBinaryList").style="display:none";
+                document.getElementById("wirelessBinaryList").style="display:''";
+                break;
+            }
+          }
+        }
+      }
 
+    return (
+        // <div>
+        //     <div>
+        //         <button onClick={onFetchButtonClick} className='defaultButton'>Fetch file p2pserver ota on github</button>
+        //         <select id='selectFetch'>
+        //             <option>Select</option>
+        //             <option value="P2P">P2P</option>
+        //             <option value="HR">HR</option>
+        //         </select>
+        //     </div>
+        //     <div>
+        //         <input type="file" onChange={(e) => showFile(e)} className='fileInput' />
+        //         <progress value="0" max="100" id="progressUploadBar" className='progressBar'></progress>
+        //         <h1 id='FileStatus'></h1>
+        //     </div>
+        //    </div>
+    <div className="container-fluid">
+        <div className="container">
+            <h3>Select the board type</h3>
+              <div className="input-group">
+                <div className="input-group-text">
+                  <input className="form-check-input mt-0" type="radio" value="WB5x" name='selectBoard'></input>
+                </div>
+                <input type="text" disabled={true} className="form-control" aria-label="Text input with radio button" value="STM32WB5x"></input>
+                </div>
+              <div className="input-group">
+                <div className="input-group-text">
+                  <input className="form-check-input mt-0" type="radio" value="WB3x" name='selectBoard'></input>
+                </div>
+                <input type="text" disabled={true} className="form-control" aria-label="Text input with radio button" value="STM32WB3x"></input>
+                </div>
+              <div className="input-group">
+                <div className="input-group-text">
+                  <input className="form-check-input mt-0" type="radio" value="WB1x" name='selectBoard'></input>
+                </div>
+                <input type="text" disabled={true} className="form-control" aria-label="Text input with radio button" value="STM32WB1x"></input>
+              </div>
+
+              <h3>Select sector to delete during the reboot</h3>
+              <div className="input-group">
+                <div className="input-group-text">
+                  <input className="form-check-input mt-0" type="radio" value="application" name='selectSector' onClick={handlerRadioSector}></input>
+                </div>
+                <input type="text" disabled={true} className="form-control"  value="Application Coprocessor Binary"></input>
+              </div>
+              <div className="input-group">
+                <div className="input-group-text">
+                  <input className="form-check-input mt-0" type="radio" value="wireless" name='selectSector' onClick={handlerRadioSector}></input>
+                </div>
+                <input type="text" disabled={true} className="form-control"  value="Wireless Coprocessor Binary"></input>
+              </div>
+              <div id='rebootSelectFilePart' style={{"display": "none"}}>
+                <div id='applicationBinaryList' style={{"display": "none"}}>
+                  <h3>Select binary file</h3>
+                  <div className="input-group">
+                    <div className="input-group-text">
+                      <input className="form-check-input mt-0" type="radio" value="P2P" name='selectBinary' onClick={onBinaryRadioButtonClick}></input>
+                    </div>
+                    <input type="text" disabled={true} className="form-control"  value="BLE_p2pServer_ota_reference.bin"></input>
+                  </div>
+                  <div className="input-group">
+                    <div className="input-group-text">
+                      <input className="form-check-input mt-0" type="radio" value="HR" name='selectBinary' onClick={onBinaryRadioButtonClick}></input>
+                    </div>
+                    <input type="text" disabled={true} className="form-control"  value="BLE_HeartRate_ota_reference.bin"></input>
+                  </div>
+                </div>
+
+                <div id='wirelessBinaryList' style={{"display": "none"}}>
+                  <h3>Select binary file</h3>
+                    <div className="input-group">
+                      <div className="input-group-text">
+                        <input className="form-check-input mt-0" type="radio" value="?" name='selectBinary' onClick={onBinaryRadioButtonClick}></input>
+                      </div>
+                      <input type="text" disabled={true} className="form-control"  value="?_reference.bin"></input>
+                    </div>
+                    <div className="input-group">
+                      <div className="input-group-text">
+                        <input className="form-check-input mt-0" type="radio" value="??" name='selectBinary' onClick={onBinaryRadioButtonClick}></input>
+                      </div>
+                      <input type="text" disabled={true} className="form-control"  value="??_reference.bin"></input>
+                    </div>
+                </div>
+                <div className="mt-3 mb-3">
+                  <input className="form-control fileInput" type="file" onChange={(e) => showFile(e)}></input>
+                </div> 
+                <div className="input-group mb-3">
+                  <span className="input-group-text" id="sectorChoise">Address 0x</span>
+                  <input type="text" className="form-control" placeholder="..." aria-describedby="sectorChoise" maxLength="4" id="sectorInput" defaultValue={"7000"}></input>
+                </div>            
+                <button className="btn btn-secondary w-100 mb-3 has-spinner" type="button" onClick={onUploadButtonClick} id="uploadButton">Upload</button>
+                <div class="progress">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" id='progressUploadBar' aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style={{width: "0%"}}></div>
+                </div>
+                <h5 id='FileStatus'></h5>
+              </div>
+            </div>
         </div>
+
     );
 };
 

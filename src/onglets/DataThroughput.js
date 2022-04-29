@@ -93,7 +93,9 @@ const DataThroughput = (props) => {
         uploadNotifyCharacteristic.characteristic.stopNotifications();
         createLogElement(uploadNotifyCharacteristic, 3, "DT DISABLE NOTIFICATION");
         console.log('Upload Notification OFF');
-        document.getElementById('notifyButtonUpload').innerHTML = "Upload Notify OFF"
+        let buttonUpload = document.getElementById('notifyButtonUpload');
+        buttonUpload.innerHTML = "Upload Notify OFF";
+        buttonUpload.disabled = false;
 
         // Show download div
         setDisplayDownloadDiv("block");
@@ -103,7 +105,9 @@ const DataThroughput = (props) => {
         downloadNotifyCharacteristic.characteristic.startNotifications();
         downloadNotifyCharacteristic.characteristic.oncharacteristicvaluechanged = notifHandlerDownload;
         createLogElement(downloadNotifyCharacteristic, 3, "DT ENABLE NOTIFICATION");
-        document.getElementById('notifyButtonDownload').innerHTML = "Download Notify ON"
+        let buttonDownload = document.getElementById('notifyButtonDownload');
+        buttonDownload.innerHTML = "Download Notify ON"
+        buttonDownload.disabled = true;
         // Start the timer
         setIntervalIdDownload(setInterval(eachSeconds, 1000));
     }
@@ -118,7 +122,9 @@ const DataThroughput = (props) => {
         downloadNotifyCharacteristic.characteristic.stopNotifications();
         createLogElement(downloadNotifyCharacteristic, 3, "DT DISABLE NOTIFICATION");
         console.log('Download Notification OFF');
-        document.getElementById('notifyButtonDownload').innerHTML = "Download Notify OFF"
+        let buttonDownload = document.getElementById('notifyButtonDownload');
+        buttonDownload.innerHTML = "Download Notify OFF"
+        buttonDownload.disabled = false;
 
         // Show upload div
         setDisplayUploadDiv("block");
@@ -128,7 +134,9 @@ const DataThroughput = (props) => {
         uploadNotifyCharacteristic.characteristic.startNotifications();
         uploadNotifyCharacteristic.characteristic.oncharacteristicvaluechanged = notifHandlerUpload;
         createLogElement(uploadNotifyCharacteristic, 3, "DT ENABLE NOTIFICATION");
-        document.getElementById('notifyButtonUpload').innerHTML = "Upload Notify ON"
+        let buttonUpload = document.getElementById('notifyButtonUpload');
+        buttonUpload.innerHTML = "Upload Notify ON";
+        buttonUpload.disabled = true;
     }
 
     function notifHandlerDownload(event) {
@@ -251,13 +259,90 @@ const DataThroughput = (props) => {
       };     
       
 
+    function onButtonResetClick(transfertType){
+        switch (transfertType){
+            case "upload":
+                dataChartUpload.fill(["", 0]);
+            break;
+            case "download":
+                dataChartDownload.fill(["", 0]);
+            break;
+        }
+        
+
+    }
+
+
     return (
         <div>
-            <div>
+        <div className="container-fluid">
+            <div className="container">
+                <div className='row justify-content-center'>
+                    <div className='col-xs-6 col-sm-6 col-md-4 col-lg-4'>
+                        <button className="btn btn-primary w-100" type="button" onClick={onDownloadNotifyButtonClick} id="notifyButtonDownload">Download Notify OFF</button>
+                    </div>
+                    <div className='col-xs-6 col-sm-6 col-md-4 col-lg-4'>
+                        <button className="btn btn-primary w-100" type="button" onClick={onUploadNotifyButtonClick} id="notifyButtonUpload">Upload Notify OFF</button>
+                    </div>
+                </div>
+                {/* Upload Chart */}
+                <div class="card text-dark bg-light mb-3" id='uploadDiv' style={{"display": displayUploadDiv}}>
+                    <div class="card-header">Upload Chart</div>
+                    <div class="card-body">
+                        <div className='row mb-2'>
+                            <div class="col-6 text-right">
+                                <button className="btn btn-secondary" type="button" onClick={onUploadButtonClick} id="UploadButton">START</button>
+                            </div>
+                            <div class="col-6 text-left">
+                            <button className="btn btn-warning" type="button" onClick={() => onButtonResetClick("upload")} id="UploadButtonReset">RESET</button>
+                            </div>
+                        </div>
+                       
+                        
+                        <p class="card-text" id="AveragebytesReceivedDownloadUpload">Average :</p>
+                        <p class="card-text" id="MaxbytesReceivedDownloadUpload">Max :</p>
+                        <p class="card-text" id="PacketSizeUpload">Packet size :</p>
+                    </div>
+                    <div className='chartContainer'style={{width: "100%"}}>
+                        <Chart
+                            chartType="LineChart"
+                            data={dataChartUpload}
+                            options={optionsUpload}
+                            height={"400px"}
+                        />
+                    </div>
+                    <div class="card-footer">
+                        <small class="text-muted"></small>
+                    </div>
+                </div>
+                {/* Download Chart */}
+                <div class="card text-dark bg-light mb-3" id='downloadDiv' style={{"display": displayDownloadDiv}}>
+                    <div class="card-header">Download chart</div>
+                    <div class="card-body">
+                        <button className="btn btn-warning mb-2" type="button" onClick={() => onButtonResetClick("download")} id="DownloadButtonReset">RESET</button>
+                        <p class="card-text" id="AveragebytesReceivedDownloadDownload">Average :</p>
+                        <p class="card-text" id="MaxbytesReceivedDownloadDownload">Max :</p>
+                        <p class="card-text" id="PacketSizeDownload">Packet size :</p>
+                    </div>
+                    <div className='chartContainer'style={{width: "100%"}}>
+                        <Chart
+                            chartType="LineChart"
+                            data={dataChartDownload}
+                            options={optionsDownload}
+                            height="400px"
+                        />
+                    </div>
+                    <div class="card-footer">
+                        <small class="text-muted"></small>
+                    </div>
+                </div>
+            </div>
+        </div>
+            {/* <div>
                 <button onClick={onDownloadNotifyButtonClick} id="notifyButtonDownload" className='DTButton'>Download Notify OFF</button>
                 <button onClick={onUploadNotifyButtonClick} id="notifyButtonUpload" className='DTButton'>Upload Notify OFF</button>
-            </div>
-            <div id='uploadDiv' style={{"display": displayUploadDiv}}>
+            </div> */}
+            {/* <div id='uploadDiv' style={{"display": displayUploadDiv}}>
                 <button onClick={onUploadButtonClick} id="UploadButton" className='defaultButton'>Start Upload</button>
                 <Chart
                     chartType="LineChart"
@@ -281,10 +366,7 @@ const DataThroughput = (props) => {
                 <div id='AveragebytesReceivedDownloadDownload' className='ChartInfoDiv'>{"Average : 0 Bytes/sec"}</div>
                 <div id='MaxbytesReceivedDownloadDownload' className='ChartInfoDiv'>{"Max : 0 Bytes/sec"}</div>
                 <div id='PacketSizeDownload' className='ChartInfoDiv'>{"Packet size : 0 Bytes"}</div>
-           </div>
-            
-            
-
+           </div> */}
         </div>
     );
 };

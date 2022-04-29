@@ -1,12 +1,10 @@
 import React, { useState } from "react";
 import '../styles/Header.css';
 import logoST from '../images/st-logo.svg';
+
 var myDevice;
 
 const Header = (props) => {
-const [style, setStyle] = useState("defaultButton");
-
-
 
     function connection() {
         console.log('Requesting Bluetooth Device...');
@@ -39,7 +37,6 @@ const [style, setStyle] = useState("defaultButton");
                 services.forEach(service => {
                     console.log(service);
                     createLogElement(service, 3, 'SERVICE')
-                    console.log(service.Prototype);
                     props.setAllServices((prevService) => [
                         ...prevService,
                         {
@@ -62,8 +59,9 @@ const [style, setStyle] = useState("defaultButton");
                             });
                         }));
                 });
-                setStyle("connectedStyleButton");
-                document.getElementById('connectButton').innerHTML = "Connected";
+                let buttonConnect = document.getElementById('connectButton');
+                buttonConnect.innerHTML = "Connected";
+                buttonConnect.disabled = true;
                 props.setIsDisconnected(false);
                 return queue;
             })
@@ -86,7 +84,7 @@ const [style, setStyle] = useState("defaultButton");
     function disconnection() {
         console.log('HEADER - Disconnecting from Bluetooth Device...');
         myDevice.gatt.disconnect();
-        setStyle("defaultButton");
+        document.getElementById('connectButton').disabled = false;
         props.setIsDisconnected(true);
         props.setAllServices([]);
         document.location.href="/";
@@ -94,7 +92,7 @@ const [style, setStyle] = useState("defaultButton");
 
     function onDisconnected() {
         console.log('HEADER - > Bluetooth Device disconnected');
-        setStyle("defaultButton");
+        document.getElementById('connectButton').disabled = false;
         props.setIsDisconnected(true);
         props.setAllServices([]);
         document.location.href="/";
@@ -110,18 +108,41 @@ const [style, setStyle] = useState("defaultButton");
     }
     
     return (
-        <div className="header">
-            <div>
-                <img src={logoST} alt="logo st"></img>
+        <div className="container-fluid" id="header">
+            <div className="container ">
+                <div className="row">
+                    <div className="col-12">
+                        <img src={logoST} alt="logo st"></img>
+                    </div>
+                </div>
+                <div className="row mt-3">             
+                    <div className="d-grid col-xs-12 col-sm-4 col-md-4 col-lg-4 p-2">
+                        <button className="btn btn-primary" type="button" onClick={connection} id="connectButton">Connect</button>
+                    </div>
+                    <div className="d-grid col-xs-12 col-sm-4 col-md-4 col-lg-4 p-2">
+                    <button className="btn btn-primary" type="button" onClick={disconnection}>Disconnect</button>
+                    </div>
+                    <div className="d-grid col-xs-12 col-sm-4 col-md-4 col-lg-4 p-2">
+                    {/* <button className="btn btn-primary" type="button" onClick={showPanel}>Info</button> */}
+                        <button class="btn btn-primary" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasLogPanel" aria-controls="offcanvasLogPanel">
+                            Info
+                        </button>
+                    </div>
+                    <div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasLogPanel" aria-labelledby="offcanvasLogPanelLabel">
+                        <div class="offcanvas-header">
+                            <h5 class="offcanvas-title" id="offcanvasLogPanelLabel">Offcanvas</h5>
+                            <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                        </div>
+                        <div class="offcanvas-body">
+                            <div id="logPanel"></div>
+                        </div>
+                    </div>
+                    {/* <div className="col-xs-12 col-sm-12 col-md-3 col-lg-3">
+                        <div id="logPanel" style={{display:"none"}}></div>
+                    </div> */}
+                </div>
             </div>
-            <div>
-                <button onClick={connection} className={style} id="connectButton">Connect</button>
-                <button onClick={disconnection} className='defaultButton'>Disconnect</button>
-                <button onClick={showPanel} className='defaultButton'>Info</button>
-            </div>      
-            <div id="logPanel" style={{display:"none"}}></div>
-        </div>
-        
+        </div>        
     );
 };
 

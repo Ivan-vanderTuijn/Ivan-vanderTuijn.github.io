@@ -5,46 +5,31 @@ import HeartRate from './onglets/HeartRate';
 import P2Pserver from './onglets/P2Pserver';
 import Ota from './onglets/Ota';
 import { BrowserRouter, Route, Link, Routes } from "react-router-dom";
+import 'bootstrap/dist/css/bootstrap.min.css';
+import bootstrap from 'bootstrap';
 
 
 const App = () => {
   const [allServices, setAllServices] = useState([]);
   const [allCharacteristics, setAllCharacteristics] = useState([]);
   const [isDisconnected, setIsDisconnected] = useState(true);
-  // let onglets = [];
   let listItems = [];
   listItems = [];
   
 allServices.map(service => {
 
   if(service.service.uuid === "0000fe80-8e22-4541-9d4c-21edae82ed19"){
-      // Data Throughput
-      // onglets.push(<DataThroughput allCharacteristics={allCharacteristics}></DataThroughput>);
-
       listItems.push(<li><Link to="/DT">DATA THROUGHPUT</Link></li>);
-      // console.log("DataThroughput service found");
   }
   if(service.service.uuid === "0000180d-0000-1000-8000-00805f9b34fb"){
-      // Heart rate
-      // onglets.push(<HeartRate allCharacteristics={allCharacteristics}></HeartRate>);
       listItems.push(<li><Link to="/HR">HEART RATE</Link></li>);
-      // console.log("HeartRate service found");
   }
   if(service.service.uuid === "0000fe40-cc7a-482a-984a-7f2ed5b3e58f"){
-      // P2P server
-      // onglets.push(<P2Pserver allCharacteristics={allCharacteristics}></P2Pserver>);
       listItems.push(<li><Link to="/P2P">P2P SERVER</Link></li>);
-      // console.log("P2Pserver service found");
   }
   if(service.service.uuid === "0000fe20-cc7a-482a-984a-7f2ed5b3e58f"){
-      // OTA
-      // onglets.push(<Ota allCharacteristics={allCharacteristics}></Ota>)
       listItems.push(<li><Link to="/OTA">OTA</Link></li>);
-      // console.log("Ota service found");
   }
-  // console.log("App>js Onglets : ");
-  // console.log(onglets);
-  // console.log(allServices);
 });
 
 
