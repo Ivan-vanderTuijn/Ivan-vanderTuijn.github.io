@@ -1,5 +1,20 @@
+// ******************************************************************************
+// * @file    Header.js
+// * @author  MCD Application Team
+// *
+//  ******************************************************************************
+//  * @attention
+//  *
+//  * Copyright (c) 2022-2023 STMicroelectronics.
+//  * All rights reserved.
+//  *
+//  * This software is licensed under terms that can be found in the LICENSE file
+//  * in the root directory of this software component.
+//  * If no LICENSE file comes with this software, it is provided AS-IS.
+//  *
+//  ******************************************************************************
+
 import React, { useState } from "react";
-import '../styles/Header.css';
 import logoST from '../images/st-logo.svg';
 
 var myDevice;
@@ -97,15 +112,6 @@ const Header = (props) => {
         props.setAllServices([]);
         document.location.href="/";
       }
-
-    function showPanel(){
-        let panelElement = document.getElementById("logPanel");
-        if ( panelElement.style.display === "none"){
-            panelElement.style.display = "block";
-        }else{
-            panelElement.style.display = "none";
-        }
-    }
     
     return (
         <div className="container-fluid" id="header">
@@ -117,29 +123,25 @@ const Header = (props) => {
                 </div>
                 <div className="row mt-3">             
                     <div className="d-grid col-xs-12 col-sm-4 col-md-4 col-lg-4 p-2">
-                        <button className="btn btn-primary" type="button" onClick={connection} id="connectButton">Connect</button>
+                        <button className="defaultButton" type="button" onClick={connection} id="connectButton">Connect</button>
                     </div>
                     <div className="d-grid col-xs-12 col-sm-4 col-md-4 col-lg-4 p-2">
-                    <button className="btn btn-primary" type="button" onClick={disconnection}>Disconnect</button>
+                    <button className="defaultButton" type="button" onClick={disconnection}>Disconnect</button>
                     </div>
                     <div className="d-grid col-xs-12 col-sm-4 col-md-4 col-lg-4 p-2">
-                    {/* <button className="btn btn-primary" type="button" onClick={showPanel}>Info</button> */}
-                        <button class="btn btn-primary" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasLogPanel" aria-controls="offcanvasLogPanel">
+                        <button class="defaultButton" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasLogPanel" aria-controls="offcanvasLogPanel">
                             Info
                         </button>
                     </div>
-                    <div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasLogPanel" aria-labelledby="offcanvasLogPanelLabel">
+                    <div class="offcanvas offcanvas-start" data-bs-scroll="true" tabindex="-1" id="offcanvasLogPanel" aria-labelledby="offcanvasLogPanelLabel">
                         <div class="offcanvas-header">
-                            <h5 class="offcanvas-title" id="offcanvasLogPanelLabel">Offcanvas</h5>
+                            <h5 class="offcanvas-title" id="offcanvasLogPanelLabel">Application log panel</h5>  
                             <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
                         </div>
                         <div class="offcanvas-body">
                             <div id="logPanel"></div>
                         </div>
                     </div>
-                    {/* <div className="col-xs-12 col-sm-12 col-md-3 col-lg-3">
-                        <div id="logPanel" style={{display:"none"}}></div>
-                    </div> */}
                 </div>
             </div>
         </div>        

@@ -1,3 +1,18 @@
+// ******************************************************************************
+// * @file    App.js
+// * @author  MCD Application Team
+// *
+//  ******************************************************************************
+//  * @attention
+//  *
+//  * Copyright (c) 2022-2023 STMicroelectronics.
+//  * All rights reserved.
+//  *
+//  * This software is licensed under terms that can be found in the LICENSE file
+//  * in the root directory of this software component.
+//  * If no LICENSE file comes with this software, it is provided AS-IS.
+//  *
+//  ******************************************************************************
 import React, { useState } from 'react';
 import Header from './components/Header';
 import DataThroughput from './onglets/DataThroughput';
@@ -5,8 +20,10 @@ import HeartRate from './onglets/HeartRate';
 import P2Pserver from './onglets/P2Pserver';
 import Ota from './onglets/Ota';
 import { BrowserRouter, Route, Link, Routes } from "react-router-dom";
+import './styles/style.css'
 import 'bootstrap/dist/css/bootstrap.min.css';
 import bootstrap from 'bootstrap';
+
 
 
 const App = () => {
@@ -19,16 +36,16 @@ const App = () => {
 allServices.map(service => {
 
   if(service.service.uuid === "0000fe80-8e22-4541-9d4c-21edae82ed19"){
-      listItems.push(<li><Link to="/DT">DATA THROUGHPUT</Link></li>);
+      listItems.push(<li><Link to="/DT">Data Throughput</Link></li>);
   }
   if(service.service.uuid === "0000180d-0000-1000-8000-00805f9b34fb"){
-      listItems.push(<li><Link to="/HR">HEART RATE</Link></li>);
+      listItems.push(<li><Link to="/HR">Heart Rate</Link></li>);
   }
   if(service.service.uuid === "0000fe40-cc7a-482a-984a-7f2ed5b3e58f"){
-      listItems.push(<li><Link to="/P2P">P2P SERVER</Link></li>);
+      listItems.push(<li><Link to="/P2P">P2P Server</Link></li>);
   }
   if(service.service.uuid === "0000fe20-cc7a-482a-984a-7f2ed5b3e58f"){
-      listItems.push(<li><Link to="/OTA">OTA</Link></li>);
+      listItems.push(<li><Link to="/OTA">Firmware Update Over The Air</Link></li>);
   }
 });
 
@@ -44,6 +61,7 @@ allServices.map(service => {
           <Routes>
             <Route path="/"/>
             <Route path="*"/>
+            {/* If isDisconnected === true, element = null eslse element = <component></component> */}
             <Route path="/HR" element={isDisconnected ? null : <HeartRate allCharacteristics={allCharacteristics}></HeartRate>} />
             <Route path="/P2P" element={isDisconnected ? null : <P2Pserver allCharacteristics={allCharacteristics}></P2Pserver>} />
             <Route path="/OTA" element={isDisconnected ? null : <Ota allCharacteristics={allCharacteristics}></Ota>} />

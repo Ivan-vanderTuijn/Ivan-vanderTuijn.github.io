@@ -1,19 +1,39 @@
-import React, { useState } from 'react';
-import { Chart } from "react-google-charts";
-import '../styles/Header.css';
+// ******************************************************************************
+// * @file    DataThroughput.js
+// * @author  MCD Application Team
+// *
+//  ******************************************************************************
+//  * @attention
+//  *
+//  * Copyright (c) 2022-2023 STMicroelectronics.
+//  * All rights reserved.
+//  *
+//  * This software is licensed under terms that can be found in the LICENSE file
+//  * in the root directory of this software component.
+//  * If no LICENSE file comes with this software, it is provided AS-IS.
+//  *
+//  ******************************************************************************
+import React, { useState, useRef, useEffect } from 'react';
 import { createLogElement } from "../components/Header";
+import iconInfo from '../images/iconInfo.svg';
+import iconInfoPink from '../images/iconInfoPink.svg';
+import { Chart, registerables } from 'chart.js';
+import { OverlayTrigger, Popover } from 'react-bootstrap';
+
+Chart.register(...registerables);
 
 const DataThroughput = (props) => {
-    const [dataChartDownload, setDataChartDownload] = useState([["x", "Download rate"],["", 0]]);
-    const [dataChartUpload, setDataChartUpload] = useState([["x", "Upload rate"],["", 0]]);
+    const [downloadDataSet, setDownloadDataSet] = useState([]);
+    const [downloadLabelTime, setDownloadLabelTime] = useState([]);
+    const [uploadDataSet, setUploadDataSet] = useState([]);
+    const [uploadLabelTime, setUploadLabelTime] = useState([]);
+
     const [intervalIdDownload, setIntervalIdDownload] = useState();
     const [intervalIdUpload, setIntervalIdUpload] = useState();
     const [displayDownloadDiv, setDisplayDownloadDiv] = useState("block");
     const [displayUploadDiv, setDisplayUploadDiv] = useState("none");
     const CHUNK_LENGTH = 237;
     const GRAPH_MAX_LABELS = 25;
-    let chartDatasetDownload = [];
-    let chartDatasetUpload = [];
     let bytesReceivedDownload = 0;
     let bytesReceivedUpload = 0;
     let MaxBytesPerSecReceivedDownload = 0;
@@ -21,9 +41,93 @@ const DataThroughput = (props) => {
     let downloadNotifyCharacteristic;
     let uploadNotifyCharacteristic;
     let writeCharacteristic;  
-    // 711 char s
-    // let dataToUpload = "124123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123123124";
-    // 237 chars
+
+    let downloadChartConfig = {
+        type: "line",
+        data: {
+            labels: "",
+            datasets: [{
+                borderColor: '#03234B',
+                backgroundColor: '#3CB4E6',
+                data: downloadDataSet,
+              }],
+        },
+        options: {
+            // aspectRatio: 1,
+            maintainAspectRatio: false,
+            responsive: true,
+            transition: {
+                duration: 0,
+            },
+            plugins: {
+                legend: { 
+                    display: false },
+                title: {
+                    position: 'top',
+                    align: 'center',
+                    display: true,
+                    text: 'Download Chart',
+                    font: {
+                        size: 20,
+                    }
+              },
+            }
+        }
+    }
+
+    let uploadChartConfig = {
+        type: "line",
+        data: {
+            labels: "",
+            datasets: [{
+                borderColor: '#03234B',
+                backgroundColor: '#3CB4E6',
+                data: uploadDataSet,
+              }],
+        },
+        options: {
+            // aspectRatio: 1,
+            maintainAspectRatio: false,
+            responsive: true,
+            transition: {
+                duration: 0,
+            },
+            plugins: {
+                legend: { 
+                    display: false },
+                title: {
+                    position: 'top',
+                    align: 'center',
+                    display: true,
+                    text: 'Upload Chart',
+                    font: {
+                        size: 20,
+                    }
+              },
+            }
+        }
+    }
+    
+    const downloadChartContainer = useRef(null);
+    const [downloadChartInstance, setDownloadChartInstance] = useState(null);
+
+    useEffect(() => {
+        if (downloadChartContainer && downloadChartContainer.current) {
+            const newDownloadChartInstance = new Chart(downloadChartContainer.current, downloadChartConfig);
+            setDownloadChartInstance(newDownloadChartInstance);
+        }
+    }, [downloadChartContainer]);
+
+    const uploadChartContainer = useRef(null);
+    const [uploadChartInstance, setUploadChartInstance] = useState(null);
+
+    useEffect(() => {
+        if (uploadChartContainer && uploadChartContainer.current) {
+            const newUploadChartInstance = new Chart(uploadChartContainer.current, uploadChartConfig);
+            setUploadChartInstance(newUploadChartInstance);
+        }
+    }, [uploadChartContainer]);
+
     let dataToUpload = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
     // Filtering the different datathroughput characteristics
     props.allCharacteristics.map(element => {
@@ -46,8 +150,6 @@ const DataThroughput = (props) => {
         var encoder = new TextEncoder();
         var view = encoder.encode(dataToUpload);
         try {
-            // console.log("Writing >> " + view);
-            // console.log(view);
             await writeCharacteristic.characteristic.writeValue(view);
         }
         catch (error) {
@@ -56,15 +158,15 @@ const DataThroughput = (props) => {
     }
         
     async function onUploadButtonClick() {
-        if (document.getElementById('UploadButton').innerHTML === "Start Upload"){
+        if (document.getElementById('UploadButton').innerHTML === "START"){
             // 4ms : max 60000
             // 5ms : max 48000
             setIntervalIdUpload(setInterval(uploadingData,4));
             createLogElement("", 0, "DT START UPLOAD");
-            document.getElementById('UploadButton').innerHTML = "Stop Upload";
+            document.getElementById('UploadButton').innerHTML = "STOP";
         }else{
             clearInterval(intervalIdUpload);
-            document.getElementById('UploadButton').innerHTML = "Start Upload";
+            document.getElementById('UploadButton').innerHTML = "START";
             createLogElement("", 0, "DT STOP UPLOAD");
         }        
     }
@@ -73,7 +175,7 @@ const DataThroughput = (props) => {
         if (bytesReceivedDownload > MaxBytesPerSecReceivedDownload) {
             MaxBytesPerSecReceivedDownload = bytesReceivedDownload;
         }
-        addDataToDownloadChart(bytesReceivedDownload);
+        addDataToChart("download", bytesReceivedDownload);
         document.getElementById('AveragebytesReceivedDownloadDownload').innerHTML = "Average : " + bytesReceivedDownload + " Bytes/sec";
         document.getElementById('MaxbytesReceivedDownloadDownload').innerHTML = "Max : " + MaxBytesPerSecReceivedDownload + " Bytes/sec";
         document.getElementById('PacketSizeDownload').innerHTML = "Packet size : " + CHUNK_LENGTH + " Bytes";
@@ -84,9 +186,9 @@ const DataThroughput = (props) => {
     async function onDownloadNotifyButtonClick() {
         // Stop the upload
         clearInterval(intervalIdUpload);
-        document.getElementById('UploadButton').innerHTML = "Start Upload";
+        document.getElementById('UploadButton').innerHTML = "START";
         createLogElement("", 0, "DT STOP UPLOAD");
-        // Hide the uppload div
+        // Hide the upload div
         setDisplayUploadDiv("none");
 
         // Stop upload notifications
@@ -112,7 +214,7 @@ const DataThroughput = (props) => {
         setIntervalIdDownload(setInterval(eachSeconds, 1000));
     }
 
-    // Download notify button click handler
+    // Upload notify button click handler
     async function onUploadNotifyButtonClick() {
         // Hide  download div
         setDisplayDownloadDiv("none");
@@ -164,13 +266,13 @@ const DataThroughput = (props) => {
         if (bytesReceivedUpload > MaxBytesPerSecReceivedUpload) {
             MaxBytesPerSecReceivedUpload = bytesReceivedUpload;
         }
-        addDataToUploadChart(bytesReceivedUpload);
+        addDataToChart("upload", bytesReceivedUpload);
         document.getElementById('AveragebytesReceivedDownloadUpload').innerHTML = "Average : " + hexToDec + " Bytes/sec";
         document.getElementById('MaxbytesReceivedDownloadUpload').innerHTML = "Max : " + MaxBytesPerSecReceivedUpload + " Bytes/sec";
         document.getElementById('PacketSizeUpload').innerHTML = "Packet size : " + CHUNK_LENGTH + " Bytes";    
     }  
 
-    function addDataToDownloadChart(data) {
+    function addDataToChart(transfertType, data) {
         // Get current time
         let currentTime = new Date().toLocaleTimeString("en-US", {
             hour: "2-digit",
@@ -178,138 +280,140 @@ const DataThroughput = (props) => {
             second: "2-digit",
             hour12: false
         });
-        chartDatasetDownload = dataChartDownload;
-        chartDatasetDownload.shift();// Remove the first element
-        if (chartDatasetDownload.length >= GRAPH_MAX_LABELS) {
-            chartDatasetDownload.pop(); // Remove the last element
-            chartDatasetDownload.unshift([currentTime,data]); // Add data at the beginning of to the Array
-            chartDatasetDownload.unshift(["x", "Download rate"]);
-        } else {
-            chartDatasetDownload.unshift([currentTime,data]); // Add data at the beginning of to the Array
-            chartDatasetDownload.unshift(["x", "Download rate"]); // Add data at the beginning of to the Array
-        }
-              
-        // Remove element index 1 of the Array but without effet
-        // Also permit to refresh the chart
-        setDataChartDownload([
-            ...chartDatasetDownload.slice(0, 1),
-            ...chartDatasetDownload.slice(1, chartDatasetDownload.length)
-          ]);
-        // Push element at end of array
-        console.log(chartDatasetDownload);
-        setDataChartDownload(chartDatasetDownload);
-    }
-
-    function addDataToUploadChart(data) {
-        // Get current time
-        let currentTime = new Date().toLocaleTimeString("en-US", {
-            hour: "2-digit",
-            minute: "2-digit",
-            second: "2-digit",
-            hour12: false
-        });
-        chartDatasetUpload = dataChartUpload;
-        chartDatasetUpload.shift();// Remove the first element
-        if (chartDatasetUpload.length >= GRAPH_MAX_LABELS) {
-            chartDatasetUpload.pop(); // Remove the last element
-            chartDatasetUpload.unshift([currentTime,data]); // Add data at the beginning of to the Array
-            chartDatasetUpload.unshift(["x", "Upload rate"]);
-        } else {
-            chartDatasetUpload.unshift([currentTime,data]); // Add data at the beginning of to the Array
-            chartDatasetUpload.unshift(["x", "Upload rate"]); // Add data at the beginning of to the Array
-        }
-              
-        // Remove element index 1 of the Array but without effet
-        // Also permit to refresh the chart
-        setDataChartUpload([
-            ...chartDatasetUpload.slice(0, 1),
-            ...chartDatasetUpload.slice(1, chartDatasetUpload.length)
-          ]);
-        // Push element at end of array
-        console.log(chartDatasetUpload);
-        setDataChartUpload(chartDatasetUpload);
-    }
-
-    const optionsDownload = {
-        title: "Download performances",
-        //curveType: "function",
-        legend: { position: "top" },
-        backgroundColor: "#eef1ff",
-        // animation: {
-        //     easing: 'linear',
-        //     duration: 1000,
-        //   },
-        colors: ["#112258"],
-        hAxis: {title: "Time"},
-        vAxis: {title: "Bytes per seconds"}
-      };     
-
-      const optionsUpload = {
-        title: "Upload performances",
-        //curveType: "function",
-        legend: { position: "top" },
-        backgroundColor: "#eef1ff",
-        // animation: {
-        //     easing: 'linear',
-        //     duration: 1000,
-        //   },
-        colors: ["#112258"],
-        hAxis: {title: "Time"},
-        vAxis: {title: "Bytes per seconds"}
-      };     
-      
+        if (transfertType === "download"){
+            if (downloadDataSet.length >= GRAPH_MAX_LABELS) {
+                downloadDataSet.pop(); // Remove the last element
+                downloadDataSet.unshift(data); // Add data at the beginning of to the Array
+                downloadLabelTime.pop(); // Remove the last element
+                downloadLabelTime.unshift(currentTime); // Add current time at the beginning of to the Array
+            } else {
+                downloadDataSet.unshift(data); // Add data at the beginning of to the Array
+                downloadLabelTime.unshift(currentTime); // Add current time at the beginning of to the Array
+            }
+            // Update the chart with new downloadDataSet and downloadLabelTime values
+            downloadChartInstance.data.datasets[0].data = downloadDataSet;
+            downloadChartInstance.data.labels = downloadLabelTime;
+            downloadChartInstance.update();
+        }      
+        if (transfertType === "upload"){
+            if (uploadDataSet.length >= GRAPH_MAX_LABELS) {
+                uploadDataSet.pop(); // Remove the last element
+                uploadDataSet.unshift(data); // Add data at the beginning of to the Array
+                uploadLabelTime.pop(); // Remove the last element
+                uploadLabelTime.unshift(currentTime); // Add current time at the beginning of to the Array
+            } else {
+                uploadDataSet.unshift(data); // Add data at the beginning of to the Array
+                uploadLabelTime.unshift(currentTime); // Add current time at the beginning of to the Array
+            }
+            // Update the chart with new downloadDataSet and downloadLabelTime values
+            uploadChartInstance.data.datasets[0].data = uploadDataSet;
+            uploadChartInstance.data.labels = uploadLabelTime;
+            uploadChartInstance.update();
+        }      
+    }      
 
     function onButtonResetClick(transfertType){
+        let currentTime = new Date().toLocaleTimeString("en-US", {
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: false
+        });
         switch (transfertType){
             case "upload":
-                dataChartUpload.fill(["", 0]);
+                uploadDataSet.fill(0,0,uploadDataSet.length)
+                uploadLabelTime.fill(currentTime,0,uploadLabelTime.length)
+                uploadChartInstance.data.datasets[0].data = uploadDataSet;
+                uploadChartInstance.data.labels = uploadLabelTime;
+                uploadChartInstance.update();
             break;
             case "download":
-                dataChartDownload.fill(["", 0]);
+                downloadDataSet.fill(0,0,downloadDataSet.length)
+                downloadLabelTime.fill(currentTime,0,downloadLabelTime.length)
+                downloadChartInstance.data.datasets[0].data = downloadDataSet;
+                downloadChartInstance.data.labels = downloadLabelTime;
+                downloadChartInstance.update();
             break;
         }
-        
-
     }
 
+    const popoverUploadButton = (
+        <Popover id="popover-trigger-hover-focus" title="Popover bottom">
+          <strong>Info :</strong> Start/stop upload to the device.
+        </Popover>
+      );
+
+    const popoverResetButton = (
+        <Popover id="popover-trigger-hover-focus" title="Popover bottom">
+          <strong>Info :</strong> Reset the data displayed on the chart.
+        </Popover>
+      );
+      
+    const popoverDownload = (
+        <Popover id="popover-trigger-hover-focus" title="Popover bottom">
+          <strong>Info :</strong> This chart display the download throughput. 
+        </Popover>
+      );
+    const popoverUpload = (
+        <Popover id="popover-trigger-hover-focus" title="Popover bottom">
+          <strong>Info :</strong> This chart display the upload throughput.
+        </Popover>
+      );
 
     return (
-        <div>
         <div className="container-fluid">
             <div className="container">
                 <div className='row justify-content-center'>
                     <div className='col-xs-6 col-sm-6 col-md-4 col-lg-4'>
-                        <button className="btn btn-primary w-100" type="button" onClick={onDownloadNotifyButtonClick} id="notifyButtonDownload">Download Notify OFF</button>
+                        <button className="defaultButton w-100 mb-3" type="button" onClick={onDownloadNotifyButtonClick} id="notifyButtonDownload">Download Notify OFF</button>
                     </div>
                     <div className='col-xs-6 col-sm-6 col-md-4 col-lg-4'>
-                        <button className="btn btn-primary w-100" type="button" onClick={onUploadNotifyButtonClick} id="notifyButtonUpload">Upload Notify OFF</button>
+                        <button className="defaultButton w-100 mb-3" type="button" onClick={onUploadNotifyButtonClick} id="notifyButtonUpload">Upload Notify OFF</button>
                     </div>
                 </div>
                 {/* Upload Chart */}
                 <div class="card text-dark bg-light mb-3" id='uploadDiv' style={{"display": displayUploadDiv}}>
-                    <div class="card-header">Upload Chart</div>
+                    <div class="card-header">Upload Chart
+                        <span>
+                            <OverlayTrigger
+                                trigger={['hover', 'focus']}
+                                placement="bottom"
+                                overlay={popoverUpload}>
+                                <img className="iconInfo" src={iconInfoPink} ></img>
+                            </OverlayTrigger>
+                        </span>
+                    </div>
                     <div class="card-body">
                         <div className='row mb-2'>
-                            <div class="col-6 text-right">
-                                <button className="btn btn-secondary" type="button" onClick={onUploadButtonClick} id="UploadButton">START</button>
+                            <div class="col-6">
+                                <div className='input-group mx-auto bg-secondary'>
+                                    <button className="secondaryButton me-1" type="button" onClick={onUploadButtonClick} id="UploadButton">START</button>
+                                    <OverlayTrigger
+                                        trigger={['hover', 'focus']}
+                                        placement="bottom"
+                                        overlay={popoverUploadButton}>
+                                        <img className="iconInfo" src={iconInfo}></img>
+                                    </OverlayTrigger>
+                                </div>
                             </div>
-                            <div class="col-6 text-left">
-                            <button className="btn btn-warning" type="button" onClick={() => onButtonResetClick("upload")} id="UploadButtonReset">RESET</button>
+                            <div class="col-6">
+                                <div className='input-group mx-auto custom-bg-danger'>
+                                    <button className="dangerButton me-1" type="button" onClick={() => onButtonResetClick("upload")} id="UploadButtonReset">RESET</button>
+                                    <OverlayTrigger
+                                        trigger={['hover', 'focus']}
+                                        placement="bottom"
+                                        overlay={popoverResetButton}>
+                                        <img className="iconInfo" src={iconInfo}></img>
+                                    </OverlayTrigger>
+                                </div>
                             </div>
-                        </div>
-                       
-                        
+                        </div>                        
                         <p class="card-text" id="AveragebytesReceivedDownloadUpload">Average :</p>
                         <p class="card-text" id="MaxbytesReceivedDownloadUpload">Max :</p>
                         <p class="card-text" id="PacketSizeUpload">Packet size :</p>
                     </div>
-                    <div className='chartContainer'style={{width: "100%"}}>
-                        <Chart
-                            chartType="LineChart"
-                            data={dataChartUpload}
-                            options={optionsUpload}
-                            height={"400px"}
-                        />
+                    <div style={{height: "400px", width: "100%"}}>  
+                        <canvas ref={uploadChartContainer}></canvas>
                     </div>
                     <div class="card-footer">
                         <small class="text-muted"></small>
@@ -317,56 +421,44 @@ const DataThroughput = (props) => {
                 </div>
                 {/* Download Chart */}
                 <div class="card text-dark bg-light mb-3" id='downloadDiv' style={{"display": displayDownloadDiv}}>
-                    <div class="card-header">Download chart</div>
+                    <div class="card-header">Download chart
+                        <span>
+                            <OverlayTrigger
+                                trigger={['hover', 'focus']}
+                                placement="bottom"
+                                overlay={popoverDownload}>
+                                <img className="iconInfo" src={iconInfoPink} ></img>
+                            </OverlayTrigger>
+                        </span>
+                    </div>
                     <div class="card-body">
-                        <button className="btn btn-warning mb-2" type="button" onClick={() => onButtonResetClick("download")} id="DownloadButtonReset">RESET</button>
+                    <div className='row mb-2'>
+                        <div class="col-6">
+                            <div className='input-group mx-auto custom-bg-danger'>
+                                <button className="dangerButton me-1" type="button" onClick={() => onButtonResetClick("download")} id="DownloadButtonReset">RESET</button>
+                                <OverlayTrigger
+                                    trigger={['hover', 'focus']}
+                                    placement="bottom"
+                                    overlay={popoverResetButton}>
+                                    <img className="iconInfo" src={iconInfo}></img>
+                                </OverlayTrigger>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                        </div>
+                    </div>    
                         <p class="card-text" id="AveragebytesReceivedDownloadDownload">Average :</p>
                         <p class="card-text" id="MaxbytesReceivedDownloadDownload">Max :</p>
                         <p class="card-text" id="PacketSizeDownload">Packet size :</p>
                     </div>
-                    <div className='chartContainer'style={{width: "100%"}}>
-                        <Chart
-                            chartType="LineChart"
-                            data={dataChartDownload}
-                            options={optionsDownload}
-                            height="400px"
-                        />
+                    <div style={{height: "400px", width: "100%"}}>  
+                        <canvas ref={downloadChartContainer}></canvas>
                     </div>
                     <div class="card-footer">
                         <small class="text-muted"></small>
                     </div>
                 </div>
             </div>
-        </div>
-            {/* <div>
-                <button onClick={onDownloadNotifyButtonClick} id="notifyButtonDownload" className='DTButton'>Download Notify OFF</button>
-                <button onClick={onUploadNotifyButtonClick} id="notifyButtonUpload" className='DTButton'>Upload Notify OFF</button>
-            </div> */}
-            {/* <div id='uploadDiv' style={{"display": displayUploadDiv}}>
-                <button onClick={onUploadButtonClick} id="UploadButton" className='defaultButton'>Start Upload</button>
-                <Chart
-                    chartType="LineChart"
-                    width="800px"
-                    height="400px"
-                    data={dataChartUpload}
-                    options={optionsUpload}
-                />
-                <div id='AveragebytesReceivedDownloadUpload' className='ChartInfoDiv'>{"Average : 0 Bytes/sec"}</div>
-                <div id='MaxbytesReceivedDownloadUpload' className='ChartInfoDiv'>{"Max : 0 Bytes/sec"}</div>
-                <div id='PacketSizeUpload' className='ChartInfoDiv'>{"Packet size : 0 Bytes"}</div>
-            </div>
-           <div id='downloadDiv' style={{"display": displayDownloadDiv}}>
-                <Chart
-                    chartType="LineChart"
-                    width="800px"
-                    height="400px"
-                    data={dataChartDownload}
-                    options={optionsDownload}
-                />
-                <div id='AveragebytesReceivedDownloadDownload' className='ChartInfoDiv'>{"Average : 0 Bytes/sec"}</div>
-                <div id='MaxbytesReceivedDownloadDownload' className='ChartInfoDiv'>{"Max : 0 Bytes/sec"}</div>
-                <div id='PacketSizeDownload' className='ChartInfoDiv'>{"Packet size : 0 Bytes"}</div>
-           </div> */}
         </div>
     );
 };
